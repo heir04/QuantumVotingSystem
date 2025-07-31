@@ -14,6 +14,5 @@ namespace Api.Entities
         public DateTime? AccessPinSetAt { get; set; }
         public string RoleName { get; set; } = string.Empty;
         public bool HasVoted { get; set; }
-        public DateTime? VotedAt { get; set; }
     }
 }
