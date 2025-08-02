@@ -9,10 +9,11 @@ using Api.Interface.IServices;
 
 namespace Api.Implementation.Services
 {
-    public class OrganizationService(IUnitOfWork unitOfWork, IHttpContextAccessor httpContextAccessor) : IOrganizationService
+    public class OrganizationService(IUnitOfWork unitOfWork, IHttpContextAccessor httpContextAccessor, IQuantumService quantumService) : IOrganizationService
     {
         private readonly IUnitOfWork _unitOfWork = unitOfWork;
         private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
+        private readonly IQuantumService _quantumService = quantumService;
 
         private static bool IsValidEmail(string email)
         {
@@ -48,25 +49,35 @@ namespace Api.Implementation.Services
                 return response;
             }
 
-            string saltString = HashingHelper.GenerateSalt();
-            string hashedPassword = HashingHelper.HashPassword(OrganizationDto.Password, saltString);
-
-            var organization = new Organization
+            try
             {
-                Name = OrganizationDto.Name,
-                Email = OrganizationDto.Email,
-                Password = hashedPassword,
-                HashSalt = saltString,
-                ContactPerson = OrganizationDto.ContactPerson,
-                RoleName = "Organization",
-                CreatedAt = DateTime.UtcNow
-            };
+                byte[] salt = await _quantumService.GenerateQuantumSaltBatchedAsync();
+                string saltString = BitConverter.ToString(salt).Replace("-", "");
+                string hashedPassword = HashingHelper.HashPassword(OrganizationDto.Password, saltString);
 
-            await _unitOfWork.Organization.Create(organization);
-            await _unitOfWork.SaveChangesAsync();
-            response.Message = "Organization created successfully";
-            response.Status = true;
-            return response;
+                var organization = new Organization
+                {
+                    Name = OrganizationDto.Name,
+                    Email = OrganizationDto.Email,
+                    Password = hashedPassword,
+                    HashSalt = saltString,
+                    ContactPerson = OrganizationDto.ContactPerson,
+                    RoleName = "Organization",
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                await _unitOfWork.Organization.Create(organization);
+                await _unitOfWork.SaveChangesAsync();
+                response.Message = "Organization created successfully";
+                response.Status = true;
+                return response;
+            }
+            catch (Exception ex)
+            {
+                response.Message = $"Failed to generate quantum salt: {ex.Message}";
+                response.Status = false;
+                return response;
+            }
         }
 
         public async Task<BaseResponse<OrganizationDto>> Get(Guid id)

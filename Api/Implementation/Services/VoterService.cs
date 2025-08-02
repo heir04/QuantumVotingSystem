@@ -119,7 +119,8 @@ namespace Api.Implementation.Services
                 {
                     var voterId = $"VTR{Guid.NewGuid().ToString().Replace("-", "")[..5].ToUpper()}";
                     var pin = voterId;
-                    string saltString = HashingHelper.GenerateSalt();
+                    byte[] salt = await _quantumService.GenerateQuantumSaltBatchedAsync();
+                    string saltString = BitConverter.ToString(salt).Replace("-", "");
                     string hashedPin = HashingHelper.HashPassword(pin, saltString);
 
                     var newVoter = new Voter
@@ -249,7 +250,7 @@ namespace Api.Implementation.Services
             response.Status = true;
             return response;
         }
-        
+
         public async Task<BaseResponse<string>> GenerateToken()
         {
             var response = new BaseResponse<string>();
