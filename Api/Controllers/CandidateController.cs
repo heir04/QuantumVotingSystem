@@ -4,16 +4,18 @@ using System.Linq;
 using System.Threading.Tasks;
 using Api.DTOs;
 using Api.Interface.IServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers
 {
+    [Authorize(Roles = "Organization")]
     [ApiController]
     [Route("api/[controller]")]
     public class CandidateController(ICandidateService candidateService) : ControllerBase
     {
         private readonly ICandidateService _candidateService = candidateService;
-
+    
         [HttpGet("GetByVotingSession/{votingSessionId}")]
         public async Task<IActionResult> Get([FromRoute] Guid votingSessionId)
         {

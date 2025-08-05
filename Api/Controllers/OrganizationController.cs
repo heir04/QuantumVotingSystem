@@ -4,10 +4,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using Api.DTOs;
 using Api.Interface.IServices;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers
 {
+    [Authorize(Roles = "Organization")]
     [ApiController]
     [Route("api/[controller]")]
     public class OrganizationController(IOrganizationService organizationService) : ControllerBase

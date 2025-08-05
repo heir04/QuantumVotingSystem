@@ -7,6 +7,7 @@ namespace Api.Interface.IServices
         Task<BaseResponse<CreateVotingSessionDto>> Create(CreateVotingSessionDto votingSessionDto);
         Task<BaseResponse<UpdateVotingSessionDto>> Update(UpdateVotingSessionDto votingSessionDto, Guid votingSessionId);
         Task<BaseResponse<VotingSessionDto>> Get(Guid id);
+        Task<BaseResponse<VotingSessionDto>> GetByVoter();
         Task<BaseResponse<IEnumerable<VotingSessionDto>>> GetAll();
         Task<BaseResponse<IEnumerable<VotingSessionDto>>> GetActiveSessions();
     }

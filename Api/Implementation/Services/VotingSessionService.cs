@@ -89,14 +89,13 @@ namespace Api.Implementation.Services
             response.Message = "Voting session created successfully.";
             return response;
         }
-
-        
+    
         public async Task<BaseResponse<VotingSessionDto>> Get(Guid id)
         {
             var response = new BaseResponse<VotingSessionDto>();
 
-            var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
-            if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var organizationId))
+            var organizationId = _helperMethods.GetUserId();
+            if (organizationId == Guid.Empty)
             {
                 response.Message = "Invalid organization Id";
                 return response;
@@ -145,12 +144,67 @@ namespace Api.Implementation.Services
             return response;
         }
 
+        public async Task<BaseResponse<VotingSessionDto>> GetByVoter()
+        {
+            var response = new BaseResponse<VotingSessionDto>();
+
+            var voterId = _helperMethods.GetUserId();
+            if (voterId == Guid.Empty)
+            {
+                response.Message = "Invalid voter Id";
+                return response;
+            }
+
+            var voter = await _unitOfWork.Voter.GetAsync(voterId);
+            if (voter == null)
+            {
+                response.Message = "Not found";
+                return response;
+            }
+
+            var votingSession = await _unitOfWork.VotingSession.GetVotingSession(voter.VotingSessionId);
+            if (votingSession == null)
+            {
+                response.Message = "Not found";
+                return response;
+            }
+            var votes = await _unitOfWork.Vote.GetAll(v => v.VotingSessionId == votingSession.Id);
+
+            response.Data = new VotingSessionDto
+            {
+                Title = votingSession.Title,
+                Description = votingSession.Description,
+                StartTime = votingSession.StartTime,
+                EndTime = votingSession.EndTime,
+                VotingDate = votingSession.VotingDate,
+                OrganizationId = votingSession.OrganizationId,
+                Candidates = votingSession.Candidates.Select(c => new CandidateDto
+                {
+
+                    Id = c.Id,
+                    FullName = c.FullName,
+                    Position = c.Position,
+                    VotesCount = votes.Count(v => v.CandidateId == c.Id)
+                }).ToList(),
+                Voters = votingSession.Voters.Select(v => new VoterDto
+                {
+                    Email = v.Email,
+                    VoterId = v.VoterId,
+                    HasVoted = v.HasVoted
+                }).ToList()
+            };
+
+            response.Message = "Success";
+            response.Status = true;
+            return response;
+        }
+
         public async Task<BaseResponse<IEnumerable<VotingSessionDto>>> GetActiveSessions()
         {
             var response = new BaseResponse<IEnumerable<VotingSessionDto>>();
 
-            var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
-            if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
+            var userId = _helperMethods.GetUserId();
+            if (userId == Guid.Empty)
             {
                 response.Message = "Invalid organization Id";
                 return response;

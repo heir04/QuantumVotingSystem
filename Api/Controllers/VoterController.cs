@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Api.DTOs;
 using Api.Interface.IRepositories;
 using Api.Interface.IServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers
@@ -16,6 +17,7 @@ namespace Api.Controllers
         private readonly IVoterService _voterService = voterService;
 
         [HttpPost("Create/{votingSessionId}")]
+        [Authorize(Roles = "Organization")]
         public async Task<IActionResult> Create([FromRoute] Guid votingSessionId, IFormFile file)
         {
             var result = await _voterService.Create(votingSessionId, file);
@@ -23,6 +25,7 @@ namespace Api.Controllers
         }
 
         [HttpGet("GetAll/{votingSessionId}")]
+        [Authorize(Roles = "Organization")]
         public async Task<IActionResult> GetAll([FromRoute] Guid votingSessionId)
         {
             var result = await _voterService.GetAll(votingSessionId);
@@ -30,6 +33,7 @@ namespace Api.Controllers
         }
 
         [HttpGet("GenerateToken")]
+        [Authorize(Roles = "Voter")]
         public async Task<IActionResult> GenerateToken()
         {
             var result = await _voterService.GenerateToken();
@@ -37,6 +41,7 @@ namespace Api.Controllers
         }
 
         [HttpPost("SendVotesEmail/{votingSessionId}")]
+        [Authorize(Roles = "Organization")]
         public async Task<IActionResult> SendVotesEmail([FromRoute] Guid votingSessionId)
         {
             var result = await _voterService.SendVotesInviteEmail(votingSessionId);
@@ -44,6 +49,7 @@ namespace Api.Controllers
         }
 
         [HttpPut("Update/{voterId}")]
+        [Authorize(Roles = "Organization")]
         public async Task<IActionResult> Update([FromRoute] Guid voterId, UpdateVoterDto voterDto)
         {
             var result = await _voterService.Update(voterDto, voterId);
