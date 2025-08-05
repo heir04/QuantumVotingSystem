@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Api.DTOs;
 using Api.Interface.IServices;
 using Microsoft.AspNetCore.Authorization;
@@ -10,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers
 {
-    [Authorize(Roles = "Organization")]
     [ApiController]
     [Route("api/[controller]")]
     public class OrganizationController(IOrganizationService organizationService) : ControllerBase
@@ -18,13 +13,14 @@ namespace Api.Controllers
         private readonly IOrganizationService _organizationService = organizationService;
 
         [HttpPost("Register")]
-        public async Task<IActionResult> Register([FromForm] CreateOrganizationDto organizationDto)
+        public async Task<IActionResult> Register(CreateOrganizationDto organizationDto)
         {
             var result = await _organizationService.Create(organizationDto);
             return result.Status ? Ok(result) : BadRequest(result);
         }
 
         [HttpGet("Get/{id}")]
+        [Authorize(Roles = "Organization")]
         public async Task<IActionResult> Get([FromRoute] Guid id)
         {
             var result = await _organizationService.Get(id);
@@ -32,6 +28,7 @@ namespace Api.Controllers
         }
 
         [HttpGet("GetProfile")]
+        [Authorize(Roles = "Organization")]
         public async Task<IActionResult> GetByCurrentId()
         {
             var result = await _organizationService.GetByCurrentId();
@@ -39,6 +36,7 @@ namespace Api.Controllers
         }
 
         [HttpGet("GetAll")]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> GetAll()
         {
             var result = await _organizationService.GetAll();
@@ -46,6 +44,7 @@ namespace Api.Controllers
         }
 
         [HttpPut("Update/{id}")]
+        [Authorize(Roles = "Organization")]
         public async Task<IActionResult> Update([FromRoute] Guid id, [FromForm] UpdateOrganizationDto organizationDto)
         {
             var result = await _organizationService.Update(organizationDto, id);
