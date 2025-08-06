@@ -100,6 +100,35 @@ namespace Api.Implementation.Services
             return response;
         }
 
+        public async Task<BaseResponse<bool>> VerifyToken(string token)
+        {
+            var response = new BaseResponse<bool>();
+            var voterId = _helperMethods.GetUserId();
+            var voter = await _unitOfWork.Voter.GetAsync(voterId);
+            if (voter == null)
+            {
+                response.Message = "Voter not found";
+                return response;
+            }
+
+            if (voter.TokenHash == null || !BCrypt.Net.BCrypt.Verify(token, voter.TokenHash))
+            {
+                response.Message = "Invalid vote token";
+                return response;
+            }
+
+            if (voter.HasVoted)
+            {
+                response.Message = "You have already voted";
+                return response;
+            }
+
+            response.Data = true;
+            response.Message = "Success";
+            response.Status = true;
+            return response;
+        }
+
         public Task<BaseResponse<IEnumerable<VoteDto>>> GetAll()
         {
             throw new NotImplementedException();

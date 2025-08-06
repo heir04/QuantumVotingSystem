@@ -23,6 +23,14 @@ namespace Api.Controllers
             return result.Status ? Ok(result) : BadRequest(result);
         }
 
+        [HttpGet("VerifyToken/{token}")]
+        [Authorize(Roles = "Voter")]
+        public async Task<IActionResult> VerifyToken([FromRoute] string token)
+        {
+            var result = await _voteService.VerifyToken(token);
+            return result.Status ? Ok(result) : BadRequest(result);
+        }
+
         [HttpGet("GetByCandidate/{candidateId}")]
         [Authorize]
         public async Task<IActionResult> GetByCandidate([FromRoute] Guid candidateId)
