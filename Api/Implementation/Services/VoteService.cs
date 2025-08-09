@@ -11,10 +11,11 @@ using Microsoft.VisualBasic;
 
 namespace Api.Implementation.Services
 {
-    public class VoteService(IUnitOfWork unitOfWork, HelperMethods helperMethods) : IVoteService
+    public class VoteService(IUnitOfWork unitOfWork, HelperMethods helperMethods, IQuantumService quantumService) : IVoteService
     {
         private readonly IUnitOfWork _unitOfWork = unitOfWork;
         private readonly HelperMethods _helperMethods = helperMethods;
+        private readonly IQuantumService _quantumService = quantumService;
         public async Task<BaseResponse<CreateVoteDto>> Create(CreateVoteDto voteDto, string voteToken)
         {
             var response = new BaseResponse<CreateVoteDto>();
@@ -52,7 +53,7 @@ namespace Api.Implementation.Services
                 return response;
             }
 
-            var currentDateTime = DateTime.UtcNow;
+            var currentDateTime = DateTime.Now;
             var currentDate = DateOnly.FromDateTime(currentDateTime);
             var currentTime = TimeOnly.FromDateTime(currentDateTime);
 
@@ -127,6 +128,73 @@ namespace Api.Implementation.Services
             response.Message = "Success";
             response.Status = true;
             return response;
+        }
+
+        public async Task<BaseResponse<string>> FindDuplicates()
+        {
+            var response = new BaseResponse<string>();
+
+            try
+            {
+                var votes = await _unitOfWork.Vote.GetAll();
+                var votesList = votes.ToList();
+
+                if (!votesList.Any())
+                {
+                    response.Message = "No votes found to analyze";
+                    response.Status = true;
+                    return response;
+                }
+
+                var duplicateGroups = votesList
+                    .GroupBy(v => v.VoteToken)
+                    .Where(g => g.Count() > 1)
+                    .ToList();
+
+                if (!duplicateGroups.Any())
+                {
+                    response.Message = "No duplicate tokens found";
+                    response.Status = true;
+                    return response;
+                }
+                var firstDuplicate = duplicateGroups.First();
+                string duplicateToken = firstDuplicate.Key;
+
+                var allTokens = votesList.Select(v => v.VoteToken).ToList();
+                int targetIndex = allTokens.IndexOf(duplicateToken);
+                
+                int nQubits = (int)Math.Ceiling(Math.Log2(allTokens.Count));
+                nQubits = Math.Max(nQubits, 2); 
+
+                response.Message = $"[C#] Detected duplicate token: {duplicateToken} at index {targetIndex}. " +
+                                 $"Total votes: {allTokens.Count}, Using {nQubits} qubits for Grover's search.";
+
+                var quantumResult = await _quantumService.GroverSearchAsync(targetIndex, nQubits);
+
+                if (quantumResult == targetIndex)
+                {
+                    response.Message += $" [Q#] Grover's algorithm successfully found duplicate at index: {quantumResult}";
+                    response.Status = true;
+                }
+                else
+                {
+                    response.Message += $" [Q#] Grover's algorithm returned index: {quantumResult} (Expected: {targetIndex})";
+                    response.Status = true; 
+                }
+
+                response.Data = $"Duplicate Analysis: Token '{duplicateToken}' appears {firstDuplicate.Count()} times. " +
+                               $"Classical search found at index {targetIndex}. " +
+                               $"Quantum Grover's search result: {quantumResult}. " +
+                               $"Total duplicates found: {duplicateGroups.Count} unique tokens with duplicates.";
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                response.Message = $"Error during duplicate detection: {ex.Message}";
+                response.Status = false;
+                return response;
+            }
         }
 
         public Task<BaseResponse<IEnumerable<VoteDto>>> GetAll()

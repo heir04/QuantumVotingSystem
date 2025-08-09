@@ -8,5 +8,6 @@ namespace Api.Interface.IServices
         Task<BaseResponse<bool>> VerifyToken(string token);
         Task<BaseResponse<IEnumerable<VoteDto>>> GetAll();
         Task<BaseResponse<VoteDto>> GetByCandidate(Guid candidateId);
+        Task<BaseResponse<string>> FindDuplicates();
     }
 }

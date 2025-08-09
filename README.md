@@ -53,6 +53,16 @@ The Quantum Voting System is designed to address the security and transparency c
 - **SQL Server** - Primary database
 - **JWT Authentication** - Secure token-based authentication
 
+### Frontend
+
+- **Next.js 15** - React framework for web applications
+- **React 18** - Component-based UI library
+- **TypeScript** - Type-safe JavaScript development
+- **Tailwind CSS** - Utility-first CSS framework
+- **Axios** - HTTP client for API communication
+- **React Hook Form** - Form handling and validation
+- **React Query/TanStack Query** - Server state management
+
 ### Quantum Computing
 
 - **Q# (Q Sharp)** - Quantum programming language
@@ -70,13 +80,15 @@ The system follows a clean architecture pattern with clear separation of concern
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Controllers   │────│    Services     │────│  Repositories   │
+│   Next.js       │────│   ASP.NET Core  │────│  Repositories   │
+│   Frontend      │    │   Controllers   │    │                 │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                       │                       │
          │                       │                       │
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│      DTOs       │    │   Quantum       │    │   Database      │
-│                 │    │   Operations    │    │   (SQL Server)  │
+│   React         │    │   Services &    │    │   Database      │
+│   Components    │    │   Quantum       │    │   (SQL Server)  │
+│                 │    │   Operations    │    │                 │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
@@ -207,6 +219,7 @@ graph TD
 - .NET 9.0 SDK
 - Microsoft Quantum Development Kit
 - SQL Server (LocalDB or full instance)
+- Node.js 18+ and npm/yarn
 - Visual Studio 2022 or VS Code with Q# extension
 
 ### Installation
@@ -218,25 +231,49 @@ graph TD
    cd quantum-voting-system
    ```
 
-2. **Setup Database**
+2. **Setup Backend**
 
    ```bash
    cd Api
    dotnet ef database update
+   dotnet run
    ```
 
-3. **Configure Settings**
-   Update `appsettings.json` with your database connection string and email settings.
-
-4. **Run the Application**
+3. **Setup Frontend**
 
    ```bash
-   dotnet run --project Api
+   cd ../frontend
+   npm install
+   npm run dev
    ```
 
-5. **Access the API**
+4. **Configure Settings**
+   - Update `Api/appsettings.json` with your database connection string and email settings
+   - Update `frontend/.env.local` with API endpoint configurations
+
+5. **Access the Application**
+   - Frontend: `http://localhost:3000`
+   - Backend API: `https://localhost:5001/api`
    - Swagger UI: `https://localhost:5001/swagger`
-   - API Base URL: `https://localhost:5001/api`
+
+## Frontend Features
+
+### User Interface
+
+- 🎨 **Responsive Design**: Mobile-first design using Tailwind CSS
+- 🔐 **Authentication Pages**: Login/Register forms for organizations and voters
+- 📊 **Dashboard**: Organization dashboard for managing voting sessions
+- 🗳️ **Voting Interface**: Clean, intuitive voting experience
+- 📈 **Results Display**: Real-time vote counting and result visualization
+- 📧 **Email Integration**: Automated voter invitation and notification system
+
+### Technical Features
+
+- ⚡ **Server-Side Rendering**: Next.js SSR for optimal performance
+- 🔒 **JWT Integration**: Secure authentication with HTTP-only cookies
+- 📱 **Progressive Web App**: PWA capabilities for mobile experience
+- 🌐 **TypeScript**: Full type safety across the application
+- 🔄 **Real-time Updates**: Live voting session status updates
 
 ## API Endpoints
 
@@ -366,10 +403,12 @@ This operation:
 
 - 🔮 **Blockchain Integration**: Add blockchain for immutable vote records
 - 🔮 **Advanced Quantum Algorithms**: Implement Grover's algorithm for search
-- 🔮 **Multi-language Support**: Internationalization
-- 🔮 **Mobile App**: React Native mobile application
-- 🔮 **Advanced Analytics**: Vote pattern analysis and reporting
+- 🔮 **Multi-language Support**: Internationalization for frontend
+- 🔮 **Enhanced Mobile App**: Native iOS/Android applications
+- 🔮 **Advanced Analytics**: Vote pattern analysis and reporting dashboard
 - 🔮 **Quantum Key Distribution**: Enhanced communication security
+- 🔮 **Real-time Notifications**: WebSocket-based live updates
+- 🔮 **Accessibility Features**: Enhanced WCAG compliance
 
 ## Acknowledgments
 
@@ -441,10 +480,12 @@ Updates voter's HasVoted status
 Time-based Controls
 Voting only allowed during specified date/time windows
 Automatic session closure at end time
+
 Quantum Security
 Q# quantum bit generation ensures true randomness
 Quantum tokens provide tamper-resistant vote verification
 Each vote gets a unique quantum-generated identifier
+
 Privacy Protection
 Votes are anonymous (linked by token, not voter ID)
 Hash-based token storage
@@ -468,7 +509,4 @@ Email notifications
 Time-based voting controls
 Areas for Enhancement:
 
-QuantumController is currently empty - could be expanded for additional quantum operations
-Result compilation and display could be enhanced
-Vote verification and audit trail features
 The system effectively combines classical web application patterns with quantum computing principles to create a secure, transparent, and tamper-resistant voting platform. The quantum component adds a layer of cryptographic security through true randomness generation that's difficult to replicate or predict.

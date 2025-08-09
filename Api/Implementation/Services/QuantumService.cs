@@ -76,5 +76,7 @@ namespace Api.Implementation.Services
 
             return hex;
         }
+
+
     }
 }
