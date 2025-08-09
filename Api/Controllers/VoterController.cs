@@ -32,7 +32,7 @@ namespace Api.Controllers
             return result.Status ? Ok(result) : BadRequest(result);
         }
 
-        [HttpGet("GenerateToken")]
+        [HttpPost("GenerateToken")]
         [Authorize(Roles = "Voter")]
         public async Task<IActionResult> GenerateToken()
         {

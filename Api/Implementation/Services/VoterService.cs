@@ -53,10 +53,29 @@ namespace Api.Implementation.Services
                 return response;
             }
 
-            if (DateTime.UtcNow > votingSession.VotingDate.ToDateTime(TimeOnly.MinValue))
+            var currentDateTime = DateTime.Now;
+            var currentDate = DateOnly.FromDateTime(currentDateTime);
+            var currentTime = TimeOnly.FromDateTime(currentDateTime);
+
+            if (votingSession.VotingDate < currentDate)
             {
-                response.Message = "Cannot upload voters after voting has ended";
+                response.Message = "Cannot upload voters - voting session has ended";
                 return response;
+            }
+
+            if (votingSession.VotingDate == currentDate)
+            {
+                if (currentTime > votingSession.EndTime)
+                {
+                    response.Message = "Cannot upload voters - voting session has ended";
+                    return response;
+                }
+                
+                if (currentTime > votingSession.StartTime)
+                {
+                    response.Message = "Cannot upload voters - voting session has already started";
+                    return response;
+                }
             }
 
             var organization = await _unitOfWork.Organization.GetAsync(organizationId);
@@ -76,6 +95,11 @@ namespace Api.Implementation.Services
                 return response;
             }
 
+            var existingVoters = await _unitOfWork.Voter.GetAll(v => v.VotingSessionId == votingSession.Id);
+            var existingEmails = existingVoters.Select(v => v.Email.ToLower()).ToHashSet();
+            
+            var processedEmailsInBatch = new HashSet<string>();
+            
             var validVoters = 0;
 
             for (int i = 0; i < records.Count; i++)
@@ -103,9 +127,10 @@ namespace Api.Implementation.Services
                     continue;
                 }
 
-                var existingEmails = await _unitOfWork.Voter.ExistsAsync(v => v.Email == voter.Email && v.VotingSessionId == votingSession.Id);
+                var emailLower = voter.Email.ToLower();
 
-                if (existingEmails)
+                // Check if email already exists in database
+                if (existingEmails.Contains(emailLower))
                 {
                     votersStatus.Add(new VoterStatusDto
                     {
@@ -114,6 +139,20 @@ namespace Api.Implementation.Services
                     });
                     continue;
                 }
+
+                // Check if email is duplicate within this CSV batch
+                if (processedEmailsInBatch.Contains(emailLower))
+                {
+                    votersStatus.Add(new VoterStatusDto
+                    {
+                        Message = $"Row {rowNumber}: Email '{voter.Email}' appears multiple times in this CSV file",
+                        Status = "failed"
+                    });
+                    continue;
+                }
+
+                // Add to processed batch
+                processedEmailsInBatch.Add(emailLower);
 
                 try
                 {
@@ -241,14 +280,24 @@ namespace Api.Implementation.Services
                 return response;
             }
 
-            foreach (var voter in voters)
+            try
             {
-                await _emailHelper.SendVoteInviteEmailAsync(voter.Email, organization.Name, voter.VoterId, votingSession);
+                foreach (var voter in voters)
+                {
+                    await _emailHelper.SendVoteInviteEmailAsync(voter.Email, organization.Name, voter.VoterId, votingSession);
+                }
+
+                response.Message = "Success";
+                response.Status = true;
+                return response;
+            }
+            catch (System.Exception)
+            {
+                response.Message = "Network error, try again later";
+                return response;
             }
 
-            response.Message = "Success";
-            response.Status = true;
-            return response;
+            
         }
 
         public async Task<BaseResponse<string>> GenerateToken()
@@ -263,6 +312,14 @@ namespace Api.Implementation.Services
             }
 
             var voter = await _unitOfWork.Voter.GetAsync(voterId);
+
+            var votingSession = await _unitOfWork.VotingSession.GetAsync(voter.VotingSessionId);
+            if (votingSession is null)
+            {
+                response.Message = "Voting session not found";
+                return response;
+            }
+
             if (voter is null)
             {
                 response.Message = "Not found";
@@ -272,34 +329,35 @@ namespace Api.Implementation.Services
             if (voter.TokenGenerated)
             {
                 response.Message = "Can not generate multiple tokens";
+                response.Status = true;
                 return response;
             }
 
-            var currentDateTime = DateTime.UtcNow;
+            var currentDateTime = DateTime.Now;
             var currentDate = DateOnly.FromDateTime(currentDateTime);
             var currentTime = TimeOnly.FromDateTime(currentDateTime);
 
-            if (voter.VotingSession.VotingDate < currentDate)
+            if (votingSession.VotingDate < currentDate)
             {
                 response.Message = "Voting session has ended";
                 return response;
             }
 
-            if (voter.VotingSession.VotingDate > currentDate)
+            if (votingSession.VotingDate > currentDate)
             {
                 response.Message = "Voting session has not started yet";
                 return response;
             }
 
-            if (voter.VotingSession.VotingDate == currentDate)
+            if (votingSession.VotingDate == currentDate)
             {
-                if (currentTime < voter.VotingSession.StartTime)
+                if (currentTime < votingSession.StartTime)
                 {
                     response.Message = "Voting session has not started yet";
                     return response;
                 }
 
-                if (currentTime > voter.VotingSession.EndTime)
+                if (currentTime > votingSession.EndTime)
                 {
                     response.Message = "Voting session has ended";
                     return response;

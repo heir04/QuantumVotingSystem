@@ -53,7 +53,7 @@ namespace Api.Implementation.Services
 
             if (voter is null)
             {
-                response.Message = $"Incorrect VoterId or password!";
+                response.Message = $"Incorrect VoterId or password";
                 return response;
             }
 
@@ -72,7 +72,7 @@ namespace Api.Implementation.Services
             string hashedPassword = HashingHelper.HashPassword(loginDto.AccessPin, voter.HashSalt);
             if (voter.AccessPin == null || !voter.AccessPin.Equals(hashedPassword))
             {
-                response.Message = $"Incorrect VoterId or Access Pin!";
+                response.Message = $"Incorrect VoterId or Access Pin";
                 return response;
             }
 

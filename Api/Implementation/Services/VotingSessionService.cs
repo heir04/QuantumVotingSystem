@@ -188,8 +188,6 @@ namespace Api.Implementation.Services
                 }).ToList(),
                 Voters = votingSession.Voters.Select(v => new VoterDto
                 {
-                    Email = v.Email,
-                    VoterId = v.VoterId,
                     HasVoted = v.HasVoted
                 }).ToList()
             };
@@ -317,10 +315,29 @@ namespace Api.Implementation.Services
                 return response;
             }
 
-            if (DateTime.UtcNow > votingSession.VotingDate.ToDateTime(TimeOnly.MinValue))
+            var currentDateTime = DateTime.Now;
+            var currentDate = DateOnly.FromDateTime(currentDateTime);
+            var currentTime = TimeOnly.FromDateTime(currentDateTime);
+
+            if (votingSession.VotingDate < currentDate)
             {
-                response.Message = "Voting ended";
+                response.Message = "Cannot Update!! - voting session has ended";
                 return response;
+            }
+
+            if (votingSession.VotingDate == currentDate)
+            {
+                if (currentTime > votingSession.EndTime)
+                {
+                    response.Message = "Cannot upload voters - voting session has ended";
+                    return response;
+                }
+                
+                if (currentTime > votingSession.StartTime)
+                {
+                    response.Message = "Cannot upload voters - voting session has already started";
+                    return response;
+                }
             }
 
             votingSession.Title = votingSessionDto.Title;

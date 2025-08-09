@@ -13,7 +13,7 @@ namespace Api.DTOs
     public class CreateCandidateDto
     {
         public required string FullName { get; set; }
-        public required string Position { get; set; }
+        public string Position { get; set; } = string.Empty;
         public string? PhotoUrl { get; set; }
         public Guid VotingSessionId { get; set; }
     }
